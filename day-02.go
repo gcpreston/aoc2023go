@@ -34,6 +34,26 @@ func (g *game) IsPossible() bool {
     return possible
 }
 
+func (g *game) Power() int {
+    least_common_pull := pull{Red: 0, Blue: 0, Green: 0}
+
+    for _, p := range g.Pulls {
+        if p.Red > least_common_pull.Red {
+            least_common_pull.Red = p.Red
+        }
+
+        if p.Green > least_common_pull.Green {
+            least_common_pull.Green = p.Green
+        }
+
+        if p.Blue > least_common_pull.Blue {
+            least_common_pull.Blue = p.Blue
+        }
+    }
+
+    return least_common_pull.Red * least_common_pull.Green * least_common_pull.Blue
+}
+
 func sum(a []int) int {
     total := 0
     for _, d := range a {
@@ -56,6 +76,7 @@ func main() {
     game_re := regexp.MustCompile("Game ([0-9]+): (.+)")
     color_re := regexp.MustCompile("([0-9]+) (red|green|blue)")
     possible_ids := []int{}
+    power_sum := 0
 
     s := strings.Split(contents, "\n")
     for _, line := range s {
@@ -92,10 +113,12 @@ func main() {
 
         if g.IsPossible() {
             possible_ids = append(possible_ids, g.id)
-            fmt.Printf("possible game: %+v\n", g)
         }
+
+        power_sum += g.Power()
     }
 
     total := sum(possible_ids)
     fmt.Printf("Day 2 part 1: %d\n", total)
+    fmt.Printf("Day 2 part 2: %d\n", power_sum)
 }
