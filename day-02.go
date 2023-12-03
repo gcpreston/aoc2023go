@@ -62,15 +62,9 @@ func sum(a []int) int {
     return total
 }
 
-func check(e error) {
-    if e != nil {
-        panic(e)
-    }
-}
-
-func main() {
+func RunDay02() {
     dat, err := os.ReadFile("./input/day-02.txt")
-    check(err)
+    Check(err)
     contents := strings.TrimSpace(string(dat))
 
     game_re := regexp.MustCompile("Game ([0-9]+): (.+)")
@@ -82,7 +76,7 @@ func main() {
     for _, line := range s {
         game_matches := game_re.FindStringSubmatch(line)
         game_no, err := strconv.Atoi(game_matches[1])
-        check(err)
+        Check(err)
 
         g := game{id: game_no}
 
@@ -95,7 +89,7 @@ func main() {
             for _, color_str := range colors {
                 color_matches := color_re.FindStringSubmatch(color_str)
                 count, err := strconv.Atoi(color_matches[1])
-                check(err)
+                Check(err)
                 color := color_matches[2]
 
                 switch color {
