@@ -7,5 +7,5 @@ func Check(e error) {
 }
 
 func main() {
-    RunDay03()
+    RunDay04()
 }
