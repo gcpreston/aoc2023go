@@ -26,5 +26,5 @@ func Map[T, U any](arr []T, f func(T) U) []U {
 }
 
 func main() {
-    RunDay05()
+    RunDay07()
 }
