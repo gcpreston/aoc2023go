@@ -52,7 +52,6 @@ func lowestLocation(seedRanges [][]int, mappings [][][]int) int {
 
         go func(rang []int) {
             defer wg.Done()
-            fmt.Println("Checking range", rang)
             lowest := math.MaxInt
             start, length := rang[0], rang[1]
 
@@ -117,6 +116,9 @@ func RunDay05() {
     part1Seeds := Map(strings.Split(sections[0][7:], " "), toInt)
     part1Locations := getAllLocations(part1Seeds, mappings)
     fmt.Println("Day 5 part 1:", slices.Min(part1Locations))
+
+    // Part 1.5
+    fmt.Println("test thing", getLocation(3107439672, mappings))
 
     // Part 2
     seedRanges := chunkBy(part1Seeds, 2)
