@@ -8,6 +8,7 @@ import (
 )
 
 var cardValuesMap = map[rune]int{
+    'J': 1,
     '2': 2,
     '3': 3,
     '4': 4,
@@ -17,7 +18,7 @@ var cardValuesMap = map[rune]int{
     '8': 8,
     '9': 9,
     'T': 10,
-    'J': 11,
+    // 'J': 11,
     'Q': 12,
     'K': 13,
     'A': 14,
@@ -81,6 +82,39 @@ func handTypeFromBuckets(buckets map[int]int) int {
     }
 }
 
+func handTypeFromBucketsPart2(buckets map[int]int) int {
+    jCount := buckets[1]
+
+    counts := make([]int, 0, len(buckets))
+    for key, val := range buckets {
+        if key != 1 {
+            counts = append(counts, val)
+        }
+    }
+
+    sort.Ints(counts)
+
+    if len(counts) < 5 {
+        // transform Js...
+    }
+
+    if testEq(counts, []int{5}) {
+        return 7
+    } else if testEq(counts, []int{1, 4}) {
+        return 6
+    } else if testEq(counts, []int{2, 3}) {
+        return 5
+    } else if testEq(counts, []int{1, 1, 3}) {
+        return 4
+    } else if testEq(counts, []int{1, 2, 2}) {
+        return 3
+    } else if testEq(counts, []int{1, 1, 1, 2}) {
+        return 2
+    } else {
+        return 1
+    }
+}
+
 func newHand(cardsStr string) hand {
     cardValues := []int{}
     buckets := make(map[int]int)
@@ -93,7 +127,8 @@ func newHand(cardsStr string) hand {
     }
 
     // Calculate hand type based on pairings
-    typeValue := handTypeFromBuckets(buckets)
+    // typeValue := handTypeFromBuckets(buckets)
+    typeValue := handTypeFromBucketsPart2(buckets)
 
     return hand{cardValues: cardValues, typeValue: typeValue}
 }
