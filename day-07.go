@@ -82,37 +82,23 @@ func handTypeFromBuckets(buckets map[int]int) int {
     }
 }
 
-func handTypeFromBucketsPart2(buckets map[int]int) int {
-    jCount := buckets[1]
+// Transform Js to whatever will produce the highest value type
+func transformBuckets(buckets map[int]int) map[int]int {
+    if jCount, ok := buckets[1]; ok {
+        delete(buckets, 1)
 
-    counts := make([]int, 0, len(buckets))
-    for key, val := range buckets {
-        if key != 1 {
-            counts = append(counts, val)
+        cardValToChangeTo, maxCount := 0, 0
+        for cardValue, count := range buckets {
+            if count > maxCount {
+                cardValToChangeTo = cardValue
+                maxCount = count
+            }
         }
+
+        buckets[cardValToChangeTo] += jCount
     }
 
-    sort.Ints(counts)
-
-    if len(counts) < 5 {
-        // transform Js...
-    }
-
-    if testEq(counts, []int{5}) {
-        return 7
-    } else if testEq(counts, []int{1, 4}) {
-        return 6
-    } else if testEq(counts, []int{2, 3}) {
-        return 5
-    } else if testEq(counts, []int{1, 1, 3}) {
-        return 4
-    } else if testEq(counts, []int{1, 2, 2}) {
-        return 3
-    } else if testEq(counts, []int{1, 1, 1, 2}) {
-        return 2
-    } else {
-        return 1
-    }
+    return buckets
 }
 
 func newHand(cardsStr string) hand {
@@ -127,8 +113,8 @@ func newHand(cardsStr string) hand {
     }
 
     // Calculate hand type based on pairings
-    // typeValue := handTypeFromBuckets(buckets)
-    typeValue := handTypeFromBucketsPart2(buckets)
+    buckets = transformBuckets(buckets) // Comment this out for part 1
+    typeValue := handTypeFromBuckets(buckets)
 
     return hand{cardValues: cardValues, typeValue: typeValue}
 }
@@ -151,7 +137,31 @@ func (h1 hand) isStrongerThan(h2 hand) bool {
     return false
 }
 
+func (h hand) toString() string {
+    var typeRepr string
+
+    switch h.typeValue {
+    case 1:
+        typeRepr = "High card"
+    case 2:
+        typeRepr = "One pair"
+    case 3:
+        typeRepr = "Two pair"
+    case 4:
+        typeRepr = "Three of a kind"
+    case 5:
+        typeRepr = "Full house"
+    case 6:
+        typeRepr = "Four of a kind"
+    case 7:
+        typeRepr = "Five of a kind"
+    }
+
+    return fmt.Sprintf("{type: %v, cardValues: %v}", typeRepr, h.cardValues)
+}
+
 func RunDay07() {
+    // contents := ReadContents("input/test.txt")
     contents := ReadContents("input/day-07.txt")
     lines := strings.Split(contents, "\n")
     handsAndBids := []handAndBid{}
@@ -165,6 +175,7 @@ func RunDay07() {
         Check(err)
 
         handsAndBids = append(handsAndBids, handAndBid{hand: hand, bid: bid})
+        // fmt.Printf("L: %v, P: %v\n", line, hand.toString())
     }
 
     sort.Slice(handsAndBids, func(i, j int) bool {
@@ -176,5 +187,5 @@ func RunDay07() {
         totalWinnings += hnb.bid * (i + 1)
     }
 
-    fmt.Println("Day 7 part 1:", totalWinnings)
+    fmt.Println("Day 7 part 2:", totalWinnings)
 }
