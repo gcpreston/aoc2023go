@@ -25,6 +25,15 @@ func Map[T, U any](arr []T, f func(T) U) []U {
     return result
 }
 
+func Any[T any](arr []T, f func(T) bool) bool {
+    for _, t := range arr {
+        if f(t) {
+            return true
+        }
+    }
+    return false
+}
+
 func main() {
-    RunDay07()
+    RunDay10()
 }
