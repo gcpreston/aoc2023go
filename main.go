@@ -35,5 +35,5 @@ func Any[T any](arr []T, f func(T) bool) bool {
 }
 
 func main() {
-    RunDay10()
+    RunDay11()
 }
