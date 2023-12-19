@@ -5,162 +5,134 @@ import (
 	"slices"
 	"strings"
 
-	"github.com/dominikbraun/graph"
-    "gonum.org/v1/gonum/stat/combin"
+	"gonum.org/v1/gonum/stat/combin"
 )
 
 type pos struct {
-    x int
-    y int
-}
-
-func (p pos) Less(comp pos) bool {
-    if p.x < comp.x {
-        return true
-    }
-
-    if p.y < comp.y {
-        return true
-    }
-
-    return false
+	row int
+	col int
 }
 
 type pair struct {
-    lowPos pos
-    highPos pos
+	low pos
+	high pos
+}
+
+func newPair(p1 pos, p2 pos) pair {
+	if p1.row < p2.row || (p1.row == p2.row && p1.col < p2.col) {
+		return pair{low: p1, high: p2}
+	} else {
+		return pair{low: p2, high: p1}
+	}
 }
 
 func expandSpace(space []string) []string {
-    emptyRows := []int{}
-    emptyCols := []int{}
+	emptyRows := []int{}
+	emptyCols := []int{}
 
-    for row, line := range space {
-        if !strings.Contains(line, "#") {
-            emptyRows = append(emptyRows, row)
-        }
-    }
+	for row, line := range space {
+		if !strings.Contains(line, "#") {
+			emptyRows = append(emptyRows, row)
+		}
+	}
 
-    for col := 0; col < len(space[0]); col++ {
-        isEmpty := true
+	for col := 0; col < len(space[0]); col++ {
+		isEmpty := true
 
-        for _, line := range space {
-            if line[col] == '#' {
-                isEmpty = false
-            }
-        }
+		for _, line := range space {
+			if line[col] == '#' {
+				isEmpty = false
+			}
+		}
 
-        if isEmpty {
-            emptyCols = append(emptyCols, col)
-        }
-    }
+		if isEmpty {
+			emptyCols = append(emptyCols, col)
+		}
+	}
 
-    var expandedSpace []string
+	var expandedSpace []string
 
-    for row, line := range space {
-        var expandedLineBuilder strings.Builder
+	for row, line := range space {
+		var expandedLineBuilder strings.Builder
 
-        for col := 0; col < len(line); col++ {
-            if slices.Contains(emptyCols, col) {
-                expandedLineBuilder.WriteString("..")
-            } else {
-                expandedLineBuilder.WriteByte(line[col])
-            }
-        }
+		for col := 0; col < len(line); col++ {
+			if slices.Contains(emptyCols, col) {
+				expandedLineBuilder.WriteString("..")
+			} else {
+				expandedLineBuilder.WriteByte(line[col])
+			}
+		}
 
-        expandedLine := expandedLineBuilder.String()
-        expandedSpace = append(expandedSpace, expandedLine)
+		expandedLine := expandedLineBuilder.String()
+		expandedSpace = append(expandedSpace, expandedLine)
 
-        if slices.Contains(emptyRows, row) {
-            expandedSpace = append(expandedSpace, expandedLine)
-        }
-    }
+		if slices.Contains(emptyRows, row) {
+			expandedSpace = append(expandedSpace, expandedLine)
+		}
+	}
 
-    return expandedSpace
+	return expandedSpace
 }
 
 func RunDay11() {
-    // Read input
-    contents := ReadContents("input/test.txt")
-    lines := strings.Split(contents, "\n")
+	// Read input
+	contents := ReadContents("input/day-11.txt")
+	lines := strings.Split(contents, "\n")
 
-    // Expand space
-    expandedSpace := expandSpace(lines)
+	// Expand space
+	expandedSpace := expandSpace(lines)
 
-    // Create graph
-    posHash := func(p pos) pos {
-        return p
-    }
+	// Create graph
+	g := Graph[pos]{}
+	galaxyPositions := []pos{}
 
-    g := graph.New(posHash)
-    galaxyPositions := []pos{}
+	for row := 0; row < len(expandedSpace); row++ {
+		for col := 0; col < len(expandedSpace[0]); col++ {
+			currentPos := pos{row: row, col: col}
+			g.AddNode(currentPos)
 
-    for row := 0; row < len(expandedSpace); row++ {
-        for col := 0; col < len(expandedSpace[0]); col++ {
-            currentPos := pos{row, col}
-            g.AddVertex(currentPos)
+			if expandedSpace[row][col] == '#' {
+				galaxyPositions = append(galaxyPositions, currentPos)
+			}
 
-            if expandedSpace[row][col] == '#' {
-                galaxyPositions = append(galaxyPositions, currentPos)
-            }
+			if row > 0 {
+				g.AddEdge(pos{row - 1, col}, currentPos)
+			}
 
-            if row > 0 {
-                g.AddEdge(pos{row - 1, col}, currentPos)
-            }
+			if col > 0 {
+				g.AddEdge(pos{row, col - 1}, currentPos)
+			}
+		}
+	}
 
-            if col > 0 {
-                g.AddEdge(pos{row, col - 1}, currentPos)
-            }
-        }
-    }
+	// Find paths
+	foundPaths := make(map[pair]bool)
+	totalCombos := len(combin.Combinations(len(galaxyPositions), 2))
+	totalLen := 0
 
-    // Find paths
-    // inefficient
-    /*
-    totalLen := 0
+	for _, p := range galaxyPositions {
+        fmt.Println("checking galaxy", p)
+		if len(foundPaths) < totalCombos {
+			g.BFSWithDepth(p, func(v pos, depth int) bool {
+				if v != p && expandedSpace[v.row][v.col] == '#' {
+					thePair := newPair(p, v)
 
-    for _, c := range combin.Combinations(len(galaxyPositions), 2) {
-        start := galaxyPositions[c[0]]
-        target := galaxyPositions[c[1]]
+					if !foundPaths[thePair] {
+						foundPaths[thePair] = true
+						totalLen += depth
+					}
+				}
 
-        path, err := graph.ShortestPath(g, start, target)
-        Check(err)
-        totalLen += len(path) - 1
-    }
-    */
-
-    // better
-    foundPaths := make(map[pair]bool)
-    totalCombos := len(combin.Combinations(len(galaxyPositions), 2))
-    totalLen := 0
-
-    for _, p := range galaxyPositions {
-        fmt.Println("cehcking galaxy", p)
-        if len(foundPaths) < totalCombos {
-            graph.BFSWithDepth(g, p, func(v pos, depth int) bool {
-                fmt.Println(p, v, depth)
-                if v != p && expandedSpace[v.x][v.y] == '#' {
-                    var thePair pair
-
-                    if p.Less(v) {
-                        thePair = pair{lowPos: p, highPos: v}
-                    } else {
-                        thePair = pair{lowPos: v, highPos: p}
-                    }
-
-                    if !foundPaths[thePair] {
-                        fmt.Println("found a path", p, v, depth)
-                        foundPaths[thePair] = true
-                        totalLen += depth
-                    }
+				if len(foundPaths) == totalCombos {
+                    fmt.Println("last one:", p, v)
+                    return true
                 }
+                return false
+			})
+		}
+	}
 
-                return len(foundPaths) == totalCombos
-            })
-            return
-        }
-    }
-
-    // Result
-    fmt.Println("Day 11 part 1:", totalLen)
+    fmt.Println("path count", len(foundPaths))
+	// Result
+	fmt.Println("Day 11 part 1:", totalLen)
 }
