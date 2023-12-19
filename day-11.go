@@ -2,31 +2,20 @@ package main
 
 import (
 	"fmt"
-	"slices"
 	"strings"
 
 	"gonum.org/v1/gonum/stat/combin"
 )
+
+const INPUT_PATH = "input/day-11.txt"
+const EXPAND_SIZE = 1000000
 
 type pos struct {
 	row int
 	col int
 }
 
-type pair struct {
-	low pos
-	high pos
-}
-
-func newPair(p1 pos, p2 pos) pair {
-	if p1.row < p2.row || (p1.row == p2.row && p1.col < p2.col) {
-		return pair{low: p1, high: p2}
-	} else {
-		return pair{low: p2, high: p1}
-	}
-}
-
-func expandSpace(space []string) []string {
+func findExpandedSpace(space []string) ([]int, []int) {
 	emptyRows := []int{}
 	emptyCols := []int{}
 
@@ -50,89 +39,78 @@ func expandSpace(space []string) []string {
 		}
 	}
 
-	var expandedSpace []string
+	return emptyRows, emptyCols
+}
 
-	for row, line := range space {
-		var expandedLineBuilder strings.Builder
+func expandedPathLength(p1 pos, p2 pos, expandedRows []int, expandedCols []int, expandSize int) int {
+    rowCount := 0
+    colCount := 0
 
-		for col := 0; col < len(line); col++ {
-			if slices.Contains(emptyCols, col) {
-				expandedLineBuilder.WriteString("..")
-			} else {
-				expandedLineBuilder.WriteByte(line[col])
-			}
-		}
+    lowRow := min(p1.row, p2.row)
+    highRow := max(p1.row, p2.row)
+    lowCol := min(p1.col, p2.col)
+    highCol := max(p1.col, p2.col)
 
-		expandedLine := expandedLineBuilder.String()
-		expandedSpace = append(expandedSpace, expandedLine)
+    for _, r := range expandedRows {
+        if r > lowRow && r < highRow {
+            rowCount++
+        }
+    }
 
-		if slices.Contains(emptyRows, row) {
-			expandedSpace = append(expandedSpace, expandedLine)
-		}
+    for _, c := range expandedCols {
+        if c > lowCol && c < highCol {
+            colCount++
+        }
+    }
+
+    return (rowCount + colCount) * (expandSize - 1)
+}
+
+func abs(x int) int {
+	if x < 0 {
+		return -x
 	}
-
-	return expandedSpace
+	return x
 }
 
 func RunDay11() {
 	// Read input
-	contents := ReadContents("input/day-11.txt")
+	contents := ReadContents(INPUT_PATH)
 	lines := strings.Split(contents, "\n")
 
 	// Expand space
-	expandedSpace := expandSpace(lines)
+	expandedRows, expandedCols := findExpandedSpace(lines)
 
 	// Create graph
-	g := Graph[pos]{}
 	galaxyPositions := []pos{}
 
-	for row := 0; row < len(expandedSpace); row++ {
-		for col := 0; col < len(expandedSpace[0]); col++ {
+	for row := 0; row < len(lines); row++ {
+		for col := 0; col < len(lines[0]); col++ {
 			currentPos := pos{row: row, col: col}
-			g.AddNode(currentPos)
 
-			if expandedSpace[row][col] == '#' {
+			if lines[row][col] == '#' {
 				galaxyPositions = append(galaxyPositions, currentPos)
-			}
-
-			if row > 0 {
-				g.AddEdge(pos{row - 1, col}, currentPos)
-			}
-
-			if col > 0 {
-				g.AddEdge(pos{row, col - 1}, currentPos)
 			}
 		}
 	}
 
 	// Find paths
-	foundPaths := make(map[pair]bool)
-	totalCombos := len(combin.Combinations(len(galaxyPositions), 2))
-	totalLen := 0
+    baseLen := 0
+    expandLen := 0
 
-	for _, p := range galaxyPositions {
-        fmt.Println("checking galaxy", p)
-		if len(foundPaths) < totalCombos {
-			g.BFSWithDepth(p, func(v pos, depth int) bool {
-				if v != p && expandedSpace[v.row][v.col] == '#' {
-					thePair := newPair(p, v)
+    fmt.Println("rows", expandedRows)
+    fmt.Println("cols", expandedCols)
 
-					if !foundPaths[thePair] {
-						foundPaths[thePair] = true
-						totalLen += depth
-					}
-				}
+    for _, c := range combin.Combinations(len(galaxyPositions), 2) {
+        gal1 := galaxyPositions[c[0]]
+        gal2 := galaxyPositions[c[1]]
 
-				if len(foundPaths) == totalCombos {
-                    fmt.Println("last one:", p, v)
-                    return true
-                }
-                return false
-			})
-		}
-	}
+        shortestDistance := abs(gal1.row - gal2.row) + abs(gal1.col - gal2.col)
+        baseLen += shortestDistance
+        expandedDistance := expandedPathLength(gal1, gal2, expandedRows, expandedCols, EXPAND_SIZE)
+        expandLen += expandedDistance
+    }
 
-    fmt.Println("path count", len(foundPaths))
 	// Result
-	fmt.Println("Day 11 part 1:", totalLen)
+	fmt.Println("Day 11 part 2:", baseLen + expandLen)
 }
